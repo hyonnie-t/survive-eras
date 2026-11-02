@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<!-- 포털 로그인 세션 자동 첨부(history26 v83) -->
+<script src="https://hyonnie-t.github.io/history26/snippets/portal_auth.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>시대를 건너 살아남기 — 3학년 한국사 총복습</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="previewBar" class="preview-bar" hidden>미리보기 모드 — 저장되지 않아. 활동을 다 안 해도 넘어갈 수 있어.</div>
+
+<!-- 늘 보이는 머리띠: 시대·장면·생존 점수 (Sticky) -->
+<header id="topbar" class="topbar" hidden>
+  <div class="wrap bar">
+    <span id="tbEra" class="tb-era"></span>
+    <span id="tbScene" class="tb-scene"></span>
+    <span id="tbHouse" class="tb-house"></span>
+    <span class="tb-score">❤ <b id="tbScore">0</b></span>
+  </div>
+</header>
+
+<main class="wrap page">
+
+  <!-- 0. 시작: 학번·이름·기숙사 -->
+  <section id="s0" class="screen">
+    <div class="hero">
+      <p class="eyebrow">3학년 한국사 총복습 · 비상교육 역사②</p>
+      <h1>⏳ 시대를 건너 살아남기</h1>
+      <p class="lead">선사 시대부터 오늘까지, 네 캐릭터가 시대마다 다시 태어난다.<br>그 시대 사람이라면 했을 선택을 하면 살아남고, 아니면… 쓰러진다. 같은 기숙사 친구가 구해 줄 수 있어.</p>
+    </div>
+    <div class="card">
+      <h2>🪪 누구니?</h2>
+      <label for="sid">학번 (5자리, 예: 30512)</label>
+      <input id="sid" inputmode="numeric" maxlength="5" autocomplete="off" data-no-draft>
+      <label for="sname">이름</label>
+      <input id="sname" autocomplete="off" data-no-draft>
+      <p class="label">🏰 내 기숙사 (선생님이 정해 준 곳)</p>
+      <div id="houseGrid" class="house-grid"></div>
+      <p id="startErr" class="err" role="alert"></p>
+      <button id="startBtn" class="btn wide">다음 — 캐릭터 만들기</button>
+    </div>
+    <p class="foot-note">기숙사 이름은 고구려 고분 벽화 사신도(교과서 40~41쪽)에서 가져왔어.</p>
+  </section>
+
+  <!-- 1. 캐릭터 생성 -->
+  <section id="s1" class="screen" hidden>
+    <div class="card">
+      <h2>🧑‍🎨 캐릭터 만들기</h2>
+      <p class="note">실명 말고, 시대를 건널 캐릭터의 이름을 지어 줘. 출신은 이야기 분위기만 바뀌고 점수와는 상관없어.</p>
+      <label for="charName">캐릭터 이름 (2~8자)</label>
+      <input id="charName" maxlength="8" autocomplete="off" data-no-draft>
+      <p class="label">출신</p>
+      <div id="originGrid" class="origin-grid"></div>
+      <p id="s1Err" class="err" role="alert"></p>
+      <div class="row">
+        <button id="s1Back" class="btn ghost">← 뒤로</button>
+        <button id="s1Next" class="btn">환생 시작 →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. 시대 들어가기(환생 카드) -->
+  <section id="s2" class="screen" hidden>
+    <div id="eraCard" class="era-card">
+      <p class="eyebrow" id="eraNo"></p>
+      <h2 id="eraTitle"></h2>
+      <p id="eraSpan" class="era-span"></p>
+      <p id="eraIntro" class="era-intro"></p>
+      <p id="eraLocked" class="locked" hidden>🔒 이 시대는 다음 시간에 열려. 선생님 신호를 기다려 줘.</p>
+      <button id="eraGo" class="btn wide">이 시대에서 눈을 뜬다 →</button>
+    </div>
+  </section>
+
+  <!-- 3. 장면 -->
+  <section id="s3" class="screen" hidden>
+    <div class="scene">
+      <article class="card situ">
+        <p class="eyebrow" id="scYear"></p>
+        <h2 id="scTitle"></h2>
+        <p class="role" id="scRole"></p>
+        <div id="scText" class="situ-text"></div>
+      </article>
+      <div class="choose">
+        <p class="label">어떻게 할까? 하나를 골라.</p>
+        <div id="choices" class="choices"></div>
+      </div>
+    </div>
+    <!-- 결과 카드(선택 뒤) -->
+    <div id="result" class="result" hidden>
+      <p class="eyebrow">📜 그 선택의 결과</p>
+      <p id="rsText" class="rs-text"></p>
+      <p id="rsPage" class="rs-page"></p>
+      <p id="rsScore" class="rs-score"></p>
+      <button id="rsNext" class="btn wide">다음 →</button>
+    </div>
+  </section>
+
+  <!-- 4. 사망·구출 -->
+  <section id="s4" class="screen" hidden>
+    <div class="death card">
+      <div class="skull">💀</div>
+      <h2 id="deathTitle"></h2>
+      <p id="deathWhy" class="death-why"></p>
+      <p id="deathPage" class="rs-page"></p>
+      <div id="rescueBox" class="rescue">
+        <p>🛟 <b>구출</b>: 같은 기숙사 친구를 불러서, 친구가 아래 버튼을 눌러 줘. 힌트 하나를 주고 다시 선택할 수 있어.</p>
+        <button id="rescueBtn" class="btn wide alt">친구가 누르기 — 구출한다</button>
+      </div>
+      <div id="hintBox" class="hint-box" hidden>
+        <p class="eyebrow">💡 친구의 귓속말</p>
+        <p id="hintText"></p>
+        <button id="retryBtn" class="btn wide">다시 선택한다 →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. 시대 끝 서술형 -->
+  <section id="s5" class="screen" hidden>
+    <div class="card">
+      <p class="eyebrow" id="esEra"></p>
+      <h2 id="esQ"></h2>
+      <p id="esGuide" class="note"></p>
+      <div id="esOpts" class="es-opts"></div>
+      <button id="esHintBtn" class="link-btn">💡 막막하면 힌트 보기</button>
+      <p id="esHint" class="hint" hidden></p>
+      <label for="esText">내 선택과 까닭 (2~3문장)</label>
+      <textarea id="esText" rows="4"></textarea>
+      <p class="count"><span id="esCount">0</span>자</p>
+      <p id="s5Err" class="err" role="alert"></p>
+      <button id="s5Next" class="btn wide">이 시대를 떠난다 →</button>
+    </div>
+  </section>
+
+  <!-- 6. 엔딩 -->
+  <section id="s6" class="screen" hidden>
+    <div class="card">
+      <h2>🌅 내가 건너온 시대</h2>
+      <p class="note" id="endSummary"></p>
+      <div class="tl-wrap">
+        <button id="tlPrev" class="tl-btn" aria-label="앞으로">◀</button>
+        <div id="timeline" class="timeline"></div>
+        <button id="tlNext" class="tl-btn" aria-label="뒤로">▶</button>
+      </div>
+      <label for="endText">엔딩 글 (선택, 150자 안팎)</label>
+      <p class="note">지금의 나로 돌아와서, 가장 기억에 남는 시대 하나를 골라 왜 그런지 써 봐.</p>
+      <textarea id="endText" rows="4" maxlength="300"></textarea>
+      <p class="count"><span id="endCount">0</span>자</p>
+      <p id="s6Err" class="err" role="alert"></p>
+      <div class="row">
+        <button id="submitBtn" class="btn">제출</button>
+        <button id="copyBtn" class="btn ghost">글 복사</button>
+      </div>
+      <p id="outMsg" class="msg"></p>
+      <p id="realCount" class="note"></p>
+      <div class="padlet-box">
+        <a id="padletBtn" class="btn alt" target="_blank" rel="noopener" hidden>패들렛 열기</a>
+        <span id="padletMsg" class="note"></span>
+      </div>
+      <p class="note">🏰 기숙사 점수는 선생님 화면에서 합산돼. 네 생존 점수: <b id="endScore">0</b></p>
+    </div>
+  </section>
+
+  <!-- 7. 교사 결산 -->
+  <section id="s7" class="screen" hidden>
+    <div class="card">
+      <h2>🏆 기숙사 결산</h2>
+      <p class="note">교사 토큰은 이 화면에서만 쓰고 저장하지 않아요. 제출된 기록(게임활동_로그)에서 반별·기숙사별 생존 점수 합을 모읍니다.</p>
+      <div class="row">
+        <input id="tkInput" type="password" placeholder="교사 토큰" autocomplete="off" data-no-draft>
+        <button id="tkLoad" class="btn">불러오기</button>
+        <button id="tkCopy" class="btn ghost">복사</button>
+      </div>
+      <p id="tkMsg" class="msg"></p>
+      <div id="tally"></div>
+    </div>
+  </section>
+
+</main>
+
+<script src="focus_guard.js"></script>
+<script src="draft_guard.js"></script>
+<script src="glossary.js"></script>
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
