@@ -9,151 +9,194 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=6">
 </head>
 <body>
 <div id="previewBar" class="preview-bar" hidden>미리보기 모드 — 저장되지 않아. 활동을 다 안 해도 넘어갈 수 있어.</div>
 
-<!-- 늘 보이는 머리띠: 시대·장면·생존 점수 (Sticky) -->
+<!-- 늘 보이는 머리띠: 시대·사건·등불·사료·도감 (Sticky) -->
 <header id="topbar" class="topbar" hidden>
   <div class="wrap bar">
     <span id="tbEra" class="tb-era"></span>
-    <span id="tbScene" class="tb-scene"></span>
-    <span id="tbHouse" class="tb-house"></span>
-    <span class="tb-score">❤ <b id="tbScore">0</b></span>
+    <span id="tbLamps" class="tb-lamps" aria-label="남은 등불"></span>
+    <button id="tbCards" class="tb-btn" type="button">📜 <b id="tbCardN">0</b></button>
+    <button id="tbDex" class="tb-btn" type="button">💀 <b id="tbDexN">0</b></button>
   </div>
 </header>
 
 <main class="wrap page">
 
-  <!-- 0. 시작: 학번·이름·기숙사 -->
+  <!-- 시작 -->
   <section id="s0" class="screen">
     <div class="hero">
       <p class="eyebrow">3학년 한국사 총복습 · 비상교육 역사②</p>
       <h1>⏳ 시대를 건너 살아남기</h1>
-      <p class="lead">선사 시대부터 오늘까지, 네 캐릭터가 시대마다 다시 태어난다.<br>그 시대 사람이라면 했을 선택을 하면 살아남고, 아니면… 쓰러진다. 같은 기숙사 친구가 구해 줄 수 있어.</p>
+      <p class="lead">선사 시대부터 오늘까지, 시대마다 다시 태어나 갈림길을 건너는 게임이야.<br>그 시대를 잘못 알면 죽어. 시대마다 등불은 3개뿐이야.</p>
     </div>
     <div class="card">
       <h2>🪪 누구니?</h2>
       <label for="sid">학번 (5자리, 예: 30512)</label>
-      <input id="sid" inputmode="numeric" maxlength="5" autocomplete="off" data-no-draft>
+      <input id="sid" inputmode="numeric" maxlength="5" autocomplete="off">
       <label for="sname">이름</label>
-      <input id="sname" autocomplete="off" data-no-draft>
-      <p class="label">🏰 내 기숙사 (선생님이 정해 준 곳)</p>
-      <div id="houseGrid" class="house-grid"></div>
+      <input id="sname" autocomplete="off">
       <p id="startErr" class="err" role="alert"></p>
-      <button id="startBtn" class="btn wide">다음 — 캐릭터 만들기</button>
+      <button id="startBtn" class="btn wide" type="button">시작하기</button>
+      <button id="pvJump" class="btn ghost wide" type="button" hidden>미리보기: 사건 골라서 보기</button>
     </div>
-    <p class="foot-note">기숙사 이름은 고구려 고분 벽화 사신도(교과서 40~41쪽)에서 가져왔어.</p>
+    <p class="foot-note">주인공과 주변 사람들은 꾸며 낸 인물이야. 역사 사실은 교과서에서 가져왔어.</p>
   </section>
 
-  <!-- 1. 캐릭터 생성 -->
+  <!-- 캐릭터 이름 -->
   <section id="s1" class="screen" hidden>
     <div class="card">
-      <h2>🧑‍🎨 캐릭터 만들기</h2>
-      <p class="note">실명 말고, 시대를 건널 캐릭터의 이름을 지어 줘. 출신은 이야기 분위기만 바뀌고 점수와는 상관없어.</p>
-      <label for="charName">캐릭터 이름 (2~8자)</label>
-      <input id="charName" maxlength="8" autocomplete="off" data-no-draft>
-      <p class="label">출신</p>
-      <div id="originGrid" class="origin-grid"></div>
-      <p id="s1Err" class="err" role="alert"></p>
-      <div class="row">
-        <button id="s1Back" class="btn ghost">← 뒤로</button>
-        <button id="s1Next" class="btn">환생 시작 →</button>
+      <h2>🧑‍🎨 시대를 건널 이름</h2>
+      <p class="note">실명 말고, 시대를 건널 주인공의 이름을 지어 줘.</p>
+      <label for="charName">주인공 이름 (2~8자)</label>
+      <input id="charName" maxlength="8" autocomplete="off">
+      <div class="rule-box">
+        <p><b>🏮 등불</b> 시대를 잘못 알면 등불이 하나 꺼지고 그 갈림길로 돌아와. 시대마다 3개야.</p>
+        <p><b>📜 사료</b> 둘러볼 수 있는 곳은 정해져 있어. 모은 사료는 근거를 댈 때 써. 틀린 사료를 내도 등불이 꺼져.</p>
+        <p><b>💀 도감</b> 죽음도 모여. 어떤 죽음이 있는지 찾아봐.</p>
+        <p><b>🛟 구출</b> 등불이 다 꺼지면 옆 친구를 불러.</p>
       </div>
+      <p id="s1Err" class="err" role="alert"></p>
+      <button id="s1Next" class="btn wide" type="button">다시 태어나기 →</button>
     </div>
   </section>
 
-  <!-- 2. 시대 들어가기(환생 카드) -->
+  <!-- 시대 카드 -->
   <section id="s2" class="screen" hidden>
     <div id="eraCard" class="era-card">
       <p class="eyebrow" id="eraNo"></p>
       <h2 id="eraTitle"></h2>
       <p id="eraSpan" class="era-span"></p>
       <p id="eraIntro" class="era-intro"></p>
-      <p id="eraLocked" class="locked" hidden>🔒 이 시대는 다음 시간에 열려. 선생님 신호를 기다려 줘.</p>
-      <button id="eraGo" class="btn wide">이 시대에서 눈을 뜬다 →</button>
+      <p id="eraLocked" class="locked" hidden>🔒 이 시대는 다음 시간에 열려. 지금까지 한 건 저장돼 있어. 선생님 신호를 기다려 줘.</p>
+      <button id="eraGo" class="btn wide" type="button">이 시대에서 눈을 뜬다 →</button>
     </div>
   </section>
 
-  <!-- 3. 장면 -->
-  <section id="s3" class="screen" hidden>
-    <div class="scene">
-      <article class="card situ">
+  <!-- 이야기: 대사·둘러보기·갈림길·심판 -->
+  <section id="sPlay" class="screen" hidden>
+    <div class="play">
+      <div id="stage" class="stage">
         <p class="eyebrow" id="scYear"></p>
         <h2 id="scTitle"></h2>
         <p class="role" id="scRole"></p>
-        <div id="scText" class="situ-text"></div>
-      </article>
-      <div class="choose">
-        <p class="label">어떻게 할까? 하나를 골라.</p>
-        <div id="choices" class="choices"></div>
+        <button id="exitExplore" class="link-btn" type="button" hidden>자유 탐험 목록으로</button>
+        <div id="log" class="log" aria-live="polite"></div>
+        <button id="nextBtn" class="next-btn" type="button" hidden>눌러서 계속 ▼</button>
       </div>
-    </div>
-    <!-- 결과 카드(선택 뒤) -->
-    <div id="result" class="result" hidden>
-      <p class="eyebrow">📜 그 선택의 결과</p>
-      <p id="rsText" class="rs-text"></p>
-      <p id="rsPage" class="rs-page"></p>
-      <p id="rsScore" class="rs-score"></p>
-      <button id="rsNext" class="btn wide">다음 →</button>
+      <div id="panel" class="panel" hidden>
+        <p id="panelQ" class="panel-q"></p>
+        <p id="panelNote" class="note"></p>
+        <div id="panelBody" class="choices"></div>
+        <p id="panelReply" class="reply" hidden></p>
+        <div id="panelWords" class="words" hidden></div>
+        <button id="panelNext" class="btn wide" type="button" hidden>이제 움직인다 →</button>
+      </div>
     </div>
   </section>
 
-  <!-- 4. 사망·구출 -->
-  <section id="s4" class="screen" hidden>
+  <!-- 어긋난 죽음 -->
+  <section id="sDeath" class="screen" hidden>
     <div class="death card">
       <div class="skull">💀</div>
+      <p class="eyebrow on-dark">새로운 죽음이 도감에 남았다</p>
       <h2 id="deathTitle"></h2>
       <p id="deathWhy" class="death-why"></p>
       <p id="deathPage" class="rs-page"></p>
-      <div id="rescueBox" class="rescue">
-        <p>🛟 <b>구출</b>: 같은 기숙사 친구를 불러서, 친구가 아래 버튼을 눌러 줘. 힌트 하나를 주고 다시 선택할 수 있어.</p>
-        <button id="rescueBtn" class="btn wide alt">친구가 누르기 — 구출한다</button>
-      </div>
-      <div id="hintBox" class="hint-box" hidden>
-        <p class="eyebrow">💡 친구의 귓속말</p>
-        <p id="hintText"></p>
-        <button id="retryBtn" class="btn wide">다시 선택한다 →</button>
-      </div>
+      <p class="lamps-big" id="deathLamps" aria-label="남은 등불"></p>
+      <button id="deathNext" class="btn wide alt" type="button">그 갈림길로 돌아간다</button>
     </div>
   </section>
 
-  <!-- 5. 시대 끝 서술형 -->
+  <!-- 역사 속 죽음 -->
+  <section id="sMemory" class="screen" hidden>
+    <div class="memory card">
+      <p class="eyebrow">기억</p>
+      <h2 id="memTitle"></h2>
+      <p id="memWhy" class="mem-why"></p>
+      <p id="memPage" class="rs-page"></p>
+      <button id="memNext" class="btn wide" type="button">다음으로</button>
+    </div>
+  </section>
+
+  <!-- 구출 -->
+  <section id="sRescue" class="screen" hidden>
+    <div class="card rescue-card">
+      <h2>🛟 등불이 모두 꺼졌어</h2>
+      <p>옆 친구를 불러 줘. 친구가 자기가 모은 사료를 보여 주면서 이 갈림길을 말로 설명해 주는 거야.</p>
+      <p class="rescue-where" id="rescueWhere"></p>
+      <ul class="path-list" id="rescueChoices"></ul>
+      <label for="friendSid">설명을 들었으면, 친구가 자기 학번을 넣어 줘</label>
+      <input id="friendSid" inputmode="numeric" maxlength="5" autocomplete="off">
+      <p id="rescueErr" class="err" role="alert"></p>
+      <button id="rescueBtn" class="btn wide alt" type="button">등불 다시 켜기</button>
+      <button id="restartBtn" class="btn ghost wide" type="button">친구를 못 부르겠어 — 이 사건을 처음부터 다시</button>
+    </div>
+  </section>
+
+  <!-- 실제 역사 -->
+  <section id="sReal" class="screen" hidden>
+    <div class="real-card card">
+      <p class="eyebrow">실제 역사</p>
+      <h2 id="realTitle"></h2>
+      <div id="realBody"></div>
+      <p id="realPage" class="rs-page"></p>
+      <button id="realNext" class="btn wide" type="button">다음으로 →</button>
+    </div>
+  </section>
+
+  <!-- 서술형 -->
   <section id="s5" class="screen" hidden>
-    <div class="card">
-      <p class="eyebrow" id="esEra"></p>
-      <h2 id="esQ"></h2>
-      <p id="esGuide" class="note"></p>
-      <div id="esOpts" class="es-opts"></div>
-      <button id="esHintBtn" class="link-btn">💡 막막하면 힌트 보기</button>
-      <p id="esHint" class="hint" hidden></p>
-      <label for="esText">내 선택과 까닭 (2~3문장)</label>
-      <textarea id="esText" rows="4"></textarea>
-      <p class="count"><span id="esCount">0</span>자</p>
-      <p id="s5Err" class="err" role="alert"></p>
-      <button id="s5Next" class="btn wide">이 시대를 떠난다 →</button>
+    <div class="split">
+      <div class="col-src">
+        <div class="card">
+          <p class="eyebrow" id="esEra"></p>
+          <h2 id="esQ"></h2>
+          <p id="esGuide" class="note"></p>
+          <div id="esOpts" class="es-opts"></div>
+        </div>
+        <div class="card" id="esPathCard">
+          <h3>🧭 네가 지나온 길</h3>
+          <ul id="esPath" class="path-list"></ul>
+        </div>
+      </div>
+      <div class="col-write">
+        <div class="card">
+          <button id="esHintBtn" class="link-btn" type="button">💡 막막하면 힌트 보기</button>
+          <p id="esHint" class="hint" hidden></p>
+          <label for="esText">내 선택과 까닭 (2~3문장)</label>
+          <textarea id="esText" rows="5"></textarea>
+          <p class="count"><span id="esCount">0</span>자</p>
+          <p id="s5Err" class="err" role="alert"></p>
+          <button id="s5Next" class="btn wide" type="button">다 썼어 →</button>
+        </div>
+      </div>
     </div>
   </section>
 
-  <!-- 6. 엔딩 -->
+  <!-- 엔딩 -->
   <section id="s6" class="screen" hidden>
     <div class="card">
       <h2>🌅 내가 건너온 시대</h2>
       <p class="note" id="endSummary"></p>
+      <ul id="endTitles" class="titles"></ul>
       <div class="tl-wrap">
-        <button id="tlPrev" class="tl-btn" aria-label="앞으로">◀</button>
+        <button id="tlPrev" class="tl-btn" type="button" aria-label="앞으로">◀</button>
         <div id="timeline" class="timeline"></div>
-        <button id="tlNext" class="tl-btn" aria-label="뒤로">▶</button>
+        <button id="tlNext" class="tl-btn" type="button" aria-label="뒤로">▶</button>
       </div>
+      <button id="endDex" class="btn ghost wide" type="button">💀 죽음 도감 보기</button>
       <label for="endText">엔딩 글 (선택, 150자 안팎)</label>
       <p class="note">지금의 나로 돌아와서, 가장 기억에 남는 시대 하나를 골라 왜 그런지 써 봐.</p>
       <textarea id="endText" rows="4" maxlength="300"></textarea>
       <p class="count"><span id="endCount">0</span>자</p>
       <p id="s6Err" class="err" role="alert"></p>
       <div class="row">
-        <button id="submitBtn" class="btn">제출</button>
-        <button id="copyBtn" class="btn ghost">글 복사</button>
+        <button id="submitBtn" class="btn" type="button">제출</button>
+        <button id="copyBtn" class="btn ghost" type="button">글 복사</button>
       </div>
       <p id="outMsg" class="msg"></p>
       <p id="realCount" class="note"></p>
@@ -161,31 +204,33 @@
         <a id="padletBtn" class="btn alt" target="_blank" rel="noopener" hidden>패들렛 열기</a>
         <span id="padletMsg" class="note"></span>
       </div>
-      <p class="note">🏰 기숙사 점수는 선생님 화면에서 합산돼. 네 생존 점수: <b id="endScore">0</b></p>
+      <button id="exploreBtn" class="btn wide" type="button" hidden>🧭 자유 탐험 — 안 가 본 길 가 보기</button>
     </div>
   </section>
 
-  <!-- 7. 교사 결산 -->
-  <section id="s7" class="screen" hidden>
+  <!-- 자유 탐험 -->
+  <section id="sExplore" class="screen" hidden>
     <div class="card">
-      <h2>🏆 기숙사 결산</h2>
-      <p class="note">교사 토큰은 이 화면에서만 쓰고 저장하지 않아요. 제출된 기록(게임활동_로그)에서 반별·기숙사별 생존 점수 합을 모읍니다.</p>
-      <div class="row">
-        <input id="tkInput" type="password" placeholder="교사 토큰" autocomplete="off" data-no-draft>
-        <button id="tkLoad" class="btn">불러오기</button>
-        <button id="tkCopy" class="btn ghost">복사</button>
-      </div>
-      <p id="tkMsg" class="msg"></p>
-      <div id="tally"></div>
+      <h2>🧭 자유 탐험</h2>
+      <p class="note">등불 걱정 없이 어떤 사건이든 다시 해 봐. 제출한 기록은 바뀌지 않고, 새로 본 죽음만 도감에 더해져.</p>
+      <div id="exploreList" class="explore-list"></div>
+      <button id="exploreBack" class="btn ghost wide" type="button">돌아가기</button>
     </div>
   </section>
-
 </main>
 
+<!-- 모은 사료·죽음 도감 -->
+<div id="sheet" class="sheet" hidden role="dialog" aria-modal="true">
+  <div class="sheet-box">
+    <div class="sheet-head"><h2 id="sheetTitle"></h2><button id="sheetClose" class="tl-btn" type="button" aria-label="닫기">✕</button></div>
+    <div id="sheetBody"></div>
+  </div>
+</div>
+
 <script src="focus_guard.js"></script>
-<script src="draft_guard.js"></script>
 <script src="glossary.js"></script>
-<script src="data.js"></script>
-<script src="app.js"></script>
+<script src="data.js?v=6"></script>
+<script src="logic.js?v=6"></script>
+<script src="app.js?v=6"></script>
 </body>
 </html>
