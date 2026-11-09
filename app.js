@@ -144,6 +144,8 @@ function curEventId() { return exploreEvent || curFlow()[G.stepIdx]; }
 function beginEvent(eid) {
   const ev = EVENTS[eid];
   $("stage").style.setProperty("--era", ERAS[ev.era - 1].color);
+  $("sceneBg").src = "scenes/" + eid + ".webp";
+  $("sceneWho").hidden = true; $("sceneWho").dataset.key = "";
   $("scYear").textContent = ev.year;
   $("scTitle").textContent = ev.title;
   $("scRole").textContent = "너는 " + ev.role + " " + (st.charName || "");
@@ -184,11 +186,29 @@ function nextLine() {
   addLine(S.queue.shift());
   $("nextBtn").hidden = false;
 }
+function faceSrc(key) { return "scenes/p_" + key + ".webp"; }
+function setSceneWho(key) {
+  const fig = $("sceneWho");
+  if (!key) { fig.classList.add("quiet"); return; }
+  fig.classList.remove("quiet");
+  if (fig.dataset.key === key && !fig.hidden) return;
+  fig.dataset.key = key;
+  fig.hidden = false;
+  fig.classList.remove("in"); void fig.offsetWidth; fig.classList.add("in"); // 바뀔 때 한 번 떠오름
+  $("sceneFace").src = faceSrc(key);
+  $("sceneName").textContent = SPEAKERS[key].name;
+}
 function addLine(l) {
   const row = el("div", "line" + (l[0] ? " said" : ""));
+  setSceneWho(l[0]);
   if (l[0]) {
     const sp = SPEAKERS[l[0]];
-    row.appendChild(el("span", "avatar", sp.ic));
+    const av = el("span", "avatar");
+    const im = document.createElement("img");
+    im.alt = ""; im.src = faceSrc(l[0]);
+    im.onerror = () => { av.textContent = sp.ic; }; // 그림이 안 오면 예전 그림 글자
+    av.appendChild(im);
+    row.appendChild(av);
     const box = el("div", "said-box");
     box.appendChild(el("b", "who", sp.name));
     const p = el("p", "txt"); box.appendChild(p); row.appendChild(box);
@@ -621,6 +641,11 @@ function init() {
   let sid = (q.get("sid") || "").trim(), name = (q.get("name") || "").trim();
   if (S.preview) { $("previewBar").hidden = false; if (!sid) sid = "30512"; if (!name) name = "미리보기"; $("pvJump").hidden = false; }
   $("sid").value = sid; $("sname").value = name;
+  if (!S.preview && parseSid(sid) && name) {
+    $("idFields").hidden = true;
+    $("knownWho").hidden = false;
+    $("knownWho").textContent = name + " (" + sid + ")";
+  }
 
   $("startBtn").addEventListener("click", startApp);
   $("s1Next").addEventListener("click", makeChar);
