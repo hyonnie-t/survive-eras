@@ -195,6 +195,7 @@ function setSceneWho(key) {
   fig.dataset.key = key;
   fig.hidden = false;
   fig.classList.remove("in"); void fig.offsetWidth; fig.classList.add("in"); // 바뀔 때 한 번 떠오름
+  $("sceneFace").onerror = () => { fig.hidden = true; }; // 그림이 안 오면 액자째 숨김
   $("sceneFace").src = faceSrc(key);
   $("sceneName").textContent = SPEAKERS[key].name;
 }
