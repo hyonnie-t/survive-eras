@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=6-cover">
+<link rel="stylesheet" href="style.css?v=7-scene">
 </head>
 <body>
 <div id="previewBar" class="preview-bar" hidden>미리보기 모드 — 저장되지 않아. 활동을 다 안 해도 넘어갈 수 있어.</div>
@@ -42,15 +42,18 @@
     <figure class="cover-banner"><img src="cover.webp" width="1200" height="671" alt="" decoding="async"></figure>
     <div class="card">
       <h2>🪪 누구니?</h2>
+      <p id="knownWho" class="known-who" hidden></p>
+      <div id="idFields">
       <label for="sid">학번 (5자리, 예: 30512)</label>
       <input id="sid" inputmode="numeric" maxlength="5" autocomplete="off">
       <label for="sname">이름</label>
       <input id="sname" autocomplete="off">
+      </div>
       <p id="startErr" class="err" role="alert"></p>
       <button id="startBtn" class="btn wide" type="button">시작하기</button>
       <button id="pvJump" class="btn ghost wide" type="button" hidden>미리보기: 사건 골라서 보기</button>
     </div>
-    <p class="foot-note">주인공과 주변 사람들은 꾸며 낸 인물이야. 역사 사실은 교과서에서 가져왔어.</p>
+    <p class="foot-note">주인공과 주변 사람들은 꾸며 낸 인물이야. 역사 사실은 교과서에서 가져왔어. 장면 그림은 분위기를 살리려고 상상해서 그린 거야.</p>
   </section>
 
   <!-- 캐릭터 이름 -->
@@ -87,6 +90,11 @@
   <section id="sPlay" class="screen" hidden>
     <div class="play">
       <div id="stage" class="stage">
+        <!-- 장면 틀(2026-11-09): 사건마다 배경 그림 + 지금 말하는 사람 그림. 글자 없는 분위기 그림이라 alt="" -->
+        <div id="scene" class="scene" aria-hidden="true">
+          <img id="sceneBg" class="scene-bg" alt="" decoding="async">
+          <figure id="sceneWho" class="scene-who" hidden><img id="sceneFace" alt="" decoding="async"><figcaption id="sceneName"></figcaption></figure>
+        </div>
         <p class="eyebrow" id="scYear"></p>
         <h2 id="scTitle"></h2>
         <p class="role" id="scRole"></p>
@@ -236,8 +244,8 @@
 
 <script src="focus_guard.js"></script>
 <script src="glossary.js"></script>
-<script src="data.js?v=6"></script>
-<script src="logic.js?v=6"></script>
-<script src="app.js?v=6"></script>
+<script src="data.js?v=7"></script>
+<script src="logic.js?v=7"></script>
+<script src="app.js?v=7"></script>
 </body>
 </html>
