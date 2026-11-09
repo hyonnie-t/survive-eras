@@ -25,7 +25,7 @@ const Logic = (() => {
       flags: {}, cards: [], visited: {}, extraLook: {}, dead: {}, eventDeaths: {},
       path: [], deathLog: [], dex: [], rescues: [], essays: {}, ending: "",
       pendingDeath: null, pendingReal: null, atEnding: false, submitted: false, explore: false,
-      lampsLost: 0, doneEvents: []
+      lampsLost: 0, doneEvents: [], trialMiss: []
     };
   }
 
@@ -100,7 +100,7 @@ const Logic = (() => {
     if (!st.cards.includes(cardId) || (st.dead[nodeId] || []).includes(cardId)) return { type: "blocked" };
     if (node.ok.includes(cardId)) { st.node = node.next; return { type: "pass", next: node.next }; }
     st.dead[nodeId] = (st.dead[nodeId] || []).concat(cardId);
-    if (!st.explore) { st.lamps = Math.max(0, st.lamps - 1); st.lampsLost += 1; }
+    if (!st.explore) { st.lamps = Math.max(0, st.lamps - 1); st.lampsLost += 1; st.trialMiss = (st.trialMiss || []).concat({ node: nodeId, card: cardId }); }
     return { type: "ask", reply: node.replies[cardId] || "그 사료로는 설명이 안 돼." };
   }
   function trialNoEvidence(st, node) {
@@ -163,5 +163,24 @@ const Logic = (() => {
     return out;
   }
 
-  return { LAMPS, hash, shuffled, newState, flowOf, addDex, showWhisper, choose, recordPath, lookLimit, canVisit, visit, trialCard, trialNoEvidence, rescueCheck, rescue, restartEvent, summary, titles };
+  /* 다시 볼 것(엔딩 복기): 어긋난 죽음과 심판에서 틀린 사료만, 처음 겪은 순서대로 한 번씩.
+     역사 속 죽음은 실수가 아니라 넣지 않는다. 자유 탐험은 임시 상태라 여기 안 잡힌다. */
+  function reviewList(st, deaths, cards, nodes) {
+    const out = [], seen = {};
+    st.deathLog.forEach(d => {
+      const x = deaths[d.id];
+      if (!x || x.kind !== "slip" || seen["d:" + d.id]) return;
+      seen["d:" + d.id] = true;
+      out.push({ kind: "slip", era: x.era, title: x.title, why: x.why, p: x.p });
+    });
+    (st.trialMiss || []).forEach(m => {
+      const c = cards[m.card], n = nodes[m.node];
+      if (!c || !n || seen["t:" + m.node + m.card]) return;
+      seen["t:" + m.node + m.card] = true;
+      out.push({ kind: "trial", era: Number(String(m.node)[0]) || 0, title: c.title, why: (n.replies && n.replies[m.card]) || "그 사료로는 설명이 안 돼.", p: c.p });
+    });
+    return out.map((x, i) => [x, i]).sort((a, b) => (a[0].era - b[0].era) || (a[1] - b[1])).map(a => a[0]); // 시대 순서대로
+  }
+
+  return { LAMPS, hash, shuffled, newState, flowOf, addDex, showWhisper, choose, recordPath, lookLimit, canVisit, visit, trialCard, trialNoEvidence, rescueCheck, rescue, restartEvent, summary, titles, reviewList };
 })();

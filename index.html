@@ -27,6 +27,7 @@
     <span id="tbLamps" class="tb-lamps" aria-label="남은 등불"></span>
     <button id="tbCards" class="tb-btn" type="button">📜 <b id="tbCardN">0</b></button>
     <button id="tbDex" class="tb-btn" type="button">💀 <b id="tbDexN">0</b></button>
+    <button id="tbSound" class="tb-btn" type="button" aria-pressed="false" aria-label="효과음 켜기">🔇</button>
   </div>
 </header>
 
@@ -157,9 +158,19 @@
     <div class="real-card card">
       <p class="eyebrow">실제 역사</p>
       <h2 id="realTitle"></h2>
-      <div id="realBody"></div>
-      <p id="realPage" class="rs-page"></p>
-      <button id="realNext" class="btn wide" type="button">다음으로 →</button>
+      <div id="realMine" class="real-mine">
+        <b class="real-mine-t">🧭 내가 고른 길</b>
+        <ul id="realMineList" class="path-list"></ul>
+      </div>
+      <div id="realGuess" class="real-guess">
+        <p>실제로는 어떻게 됐을까? 먼저 짐작해 보고 펼쳐 봐.</p>
+        <button id="realOpen" class="btn wide alt" type="button">📖 실제 역사 펼치기</button>
+      </div>
+      <div id="realShown" hidden>
+        <div id="realBody"></div>
+        <p id="realPage" class="rs-page"></p>
+        <button id="realNext" class="btn wide" type="button">다음으로 →</button>
+      </div>
     </div>
   </section>
 
@@ -204,8 +215,13 @@
         <button id="tlNext" class="tl-btn" type="button" aria-label="뒤로">▶</button>
       </div>
       <button id="endDex" class="btn ghost wide" type="button">💀 죽음 도감 보기</button>
+      <div class="review-box">
+        <h3>🔁 다시 볼 것 — 헷갈렸던 곳</h3>
+        <p id="reviewNone" class="note" hidden>헷갈린 곳 없이 건넜어. 도감의 ??? 칸은 자유 탐험에서 채울 수 있어.</p>
+        <div id="reviewList"></div>
+      </div>
       <label for="endText">엔딩 글 (선택, 150자 안팎)</label>
-      <p class="note">지금의 나로 돌아와서, 가장 기억에 남는 시대 하나를 골라 왜 그런지 써 봐.</p>
+      <p class="note">지금의 나로 돌아와서, 가장 기억에 남는 시대나 내 선택이 실제 역사와 달랐던 곳 하나를 골라 왜 그런지 써 봐.</p>
       <textarea id="endText" rows="4" maxlength="300"></textarea>
       <p class="count"><span id="endCount">0</span>자</p>
       <p id="s6Err" class="err" role="alert"></p>
