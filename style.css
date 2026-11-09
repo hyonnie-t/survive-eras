@@ -234,3 +234,28 @@ input:focus,textarea:focus{outline:2px solid var(--moss);outline-offset:1px;bord
 @media (min-width:768px){.scene-who{max-width:170px}}
 @media (min-width:900px) and (orientation:landscape) and (max-height:860px){.scene{aspect-ratio:5/2}.scene-who{width:22%}}
 @media (prefers-reduced-motion:reduce){.scene-who{transition:none}.scene-who.in{animation:none}}
+
+/* 벤치마크 2차(2026-11-09): 실제 역사 화면은 «내가 고른 길 → 먼저 짐작 → 펼치기», 엔딩은 «다시 볼 것» 복기.
+ * 움직임: 실제 역사 문장과 복기 카드가 한 장씩 떠오름(Scroll-triggered, opacity·transform 0.3초), 구출 때 머리띠 등불 한 번 반짝.
+ * 움직임 줄이기 설정이면 모두 끈다. */
+.real-mine{background:var(--moss-wash);border-radius:6px;padding:10px 14px;margin:4px 0 12px}
+.real-mine-t{display:block;font:700 16px var(--sans);color:var(--moss-deep);margin-bottom:4px}
+.real-guess p{font:16px var(--sans);color:var(--muted);margin:4px 0 0}
+.real-line{opacity:0;transform:translateY(8px);transition:opacity .3s ease,transform .3s ease}
+.real-line.show{opacity:1;transform:none}
+.tl-real{color:var(--ink);background:var(--gold-wash);border-left:3px solid var(--gold);border-radius:3px;padding:4px 8px;margin-top:6px!important}
+.review-box{margin:14px 0 6px}
+.review-box h3{color:var(--moss-deep)}
+.review{border:1px solid var(--line);border-left:4px solid var(--persimmon);border-radius:6px;background:#fff;padding:9px 12px;margin-bottom:8px;font-size:16px;
+  opacity:0;transform:translateY(10px);transition:opacity .3s ease,transform .3s ease}
+.review.trial{border-left-color:var(--gold)}
+.review.show{opacity:1;transform:none}
+.review b{font-family:var(--sans)}
+.review p{margin:3px 0}
+.tb-lamps{display:inline-block}
+.tb-lamps.relit{animation:relit .9s ease-out 1}
+@keyframes relit{0%{transform:scale(1);opacity:.4}40%{transform:scale(1.25);opacity:1}100%{transform:scale(1);opacity:1}}
+@media (prefers-reduced-motion:reduce){
+  .real-line,.review{transition:none;opacity:1;transform:none}
+  .tb-lamps.relit{animation:none}
+}

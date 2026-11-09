@@ -17,6 +17,47 @@ let exploreEvent = null;
 const $ = id => document.getElementById(id);
 const skip = () => S.preview;
 const noMotion = () => window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+/* 효과음(2026-11-09): 파일 없이 브라우저가 짧은 음을 만든다. 교실이 시끄럽지 않게 기본은 꺼짐, 머리띠 🔇 버튼으로 켠다.
+ * 켬·끔은 이 기기에만 기억한다. 소리가 막힌 기기에서는 조용히 넘어간다. */
+const Sound = (() => {
+  const KEY = "survive_eras_sound";
+  const SEQ = {
+    slip: [[247, 0, .16, "square"], [185, .15, .34, "square"]],   // 어긋난 죽음: 낮게 두 번 떨어짐
+    memory: [[330, 0, 1.1, "sine"]],                               // 역사 속 죽음: 낮은 종 한 번
+    rescue: [[392, 0, .14, "triangle"], [494, .12, .14, "triangle"], [587, .24, .34, "triangle"]], // 등불 다시 켜짐: 오름
+    pass: [[659, 0, .12, "triangle"], [880, .11, .28, "triangle"]], // 심판 통과
+    on: [[523, 0, .18, "sine"]]
+  };
+  let on = false, ctx = null;
+  try { on = localStorage.getItem(KEY) === "1"; } catch (e) { /* 막히면 꺼짐 */ }
+  function play(kind) {
+    if (!on || !SEQ[kind]) return;
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      ctx = ctx || new AC();
+      if (ctx.state === "suspended") { const p = ctx.resume(); if (p && p.catch) p.catch(() => {}); }
+      const t0 = ctx.currentTime + .02;
+      SEQ[kind].forEach(([f, at, dur, type]) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = type; o.frequency.value = f;
+        g.gain.setValueAtTime(0.0001, t0 + at);
+        g.gain.exponentialRampToValueAtTime(type === "square" ? .05 : .12, t0 + at + .02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t0 + at + dur);
+        o.connect(g); g.connect(ctx.destination);
+        o.start(t0 + at); o.stop(t0 + at + dur + .05);
+      });
+    } catch (e) { /* 소리 없이 진행 */ }
+  }
+  function toggle() {
+    on = !on;
+    try { localStorage.setItem(KEY, on ? "1" : "0"); } catch (e) { /* 이번 화면에서만 */ }
+    play("on");
+    return on;
+  }
+  return { play, toggle, isOn: () => on };
+})();
+
 function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
 function parseSid(sid) { return /^\d{5}$/.test(sid) ? { grade: Number(sid[0]), ban: Number(sid.slice(1, 3)) } : null; }
 function countChars(t) { return String(t || "").replace(/\s/g, "").length; }
@@ -53,6 +94,19 @@ function renderTop() {
   $("tbLamps").innerHTML = G.explore ? "🧭 탐험 중" : lampText(G.lamps);
   $("tbCardN").textContent = G.cards.length;
   $("tbDexN").textContent = st.dex.length;
+  renderSound();
+}
+function renderSound() {
+  const b = $("tbSound"), on = Sound.isOn();
+  b.textContent = on ? "🔊" : "🔇";
+  b.setAttribute("aria-pressed", on ? "true" : "false");
+  b.setAttribute("aria-label", on ? "효과음 끄기" : "효과음 켜기");
+}
+/* 의미 있는 순간에만 한 번 눈에 띄게: 등불이 다시 켜질 때 머리띠 등불이 반짝 */
+function pulseLamps() {
+  if (noMotion()) return;
+  const t = $("tbLamps");
+  t.classList.remove("relit"); void t.offsetWidth; t.classList.add("relit");
 }
 
 /* ── 시트 전송 ── */
@@ -337,6 +391,7 @@ function showDeathScreen(did) {
   $("deathLamps").innerHTML = G.explore ? "" : lampText(G.lamps);
   $("deathNext").textContent = !G.explore && G.lamps <= 0 ? "등불이 없어… 다음으로" : "그 갈림길로 돌아간다";
   show("sDeath");
+  Sound.play("slip");
 }
 function leaveDeath() {
   G.pendingDeath = null; save();
@@ -350,6 +405,7 @@ function showMemoryScreen(did) {
   $("memWhy").textContent = d.why;
   $("memPage").textContent = "📖 교과서 " + d.p + "쪽";
   show("sMemory");
+  Sound.play("memory");
 }
 function leaveMemory() { G.pendingDeath = null; save(); goNode(G.node); }
 
@@ -377,6 +433,7 @@ function trialPick(id, n, cid) {
   save();
   if (r.type === "ask") { clearPanel(); renderTop(); playLines([[null, r.reply, _c], [null, "등불이 하나 꺼졌다.", _c]], () => goNode(id)); return; }
   clearPanel();
+  Sound.play("pass");
   playLines(n.pass, () => goNode(r.next));
 }
 function trialNone(n) {
@@ -413,6 +470,8 @@ function doRescue() {
   beginEvent(curEventId());
   if (card) showCard(card);
   goNode(G.node);
+  Sound.play("rescue");
+  pulseLamps();
 }
 function doRestart() {
   const eid = curEventId();
@@ -426,10 +485,25 @@ function doRestart() {
 function showReal() {
   const eid = curEventId(), ev = EVENTS[eid];
   $("realTitle").textContent = ev.year + " · " + ev.title;
+  /* 내 선택 → 먼저 짐작 → 펼치기(벤치마크 2차 2026-11-09). 자유 탐험은 길을 기록하지 않아 «내가 고른 길»이 없다 */
+  const mine = G.path.filter(p => p.event === eid);
+  const ul = $("realMineList"); ul.innerHTML = "";
+  mine.forEach(p => ul.appendChild(el("li", p.memory ? "mem" : "", p.t)));
+  $("realMine").hidden = !mine.length;
   const b = $("realBody"); b.innerHTML = "";
-  ev.real.lines.forEach(t => b.appendChild(el("p", "", t)));
+  ev.real.lines.forEach(t => b.appendChild(el("p", "real-line", t)));
   $("realPage").textContent = "📖 교과서 " + ev.real.p + "쪽";
+  $("realGuess").hidden = false;
+  $("realShown").hidden = true;
   show("sReal");
+  if (skip()) openReal(); // 미리보기는 바로 펼친다
+}
+/* 정답 공개 순간: 실제 역사 문장이 한 줄씩 떠오름(Scroll-triggered와 같은 0.3초·간격) */
+function openReal() {
+  $("realGuess").hidden = true;
+  $("realShown").hidden = false;
+  document.querySelectorAll("#realBody .real-line").forEach((p, i) => setTimeout(() => p.classList.add("show"), noMotion() ? 0 : 80 + i * 160));
+  if (window.innerWidth < 900) $("realShown").scrollIntoView({ behavior: noMotion() ? "auto" : "smooth", block: "nearest" });
 }
 function leaveReal() {
   const done = curEventId();
@@ -479,16 +553,21 @@ function renderEnding() {
     const card = el("div", "tl"); card.style.setProperty("--era", era.color);
     card.appendChild(el("h3", "", era.id + ". " + era.name));
     const ul = el("ul");
-    st.path.filter(p => EVENTS[p.event].era === era.id).forEach(p => {
+    const rows = st.path.filter(p => EVENTS[p.event].era === era.id);
+    rows.forEach((p, i) => {
       ul.appendChild(el("li", "tl-pick" + (p.memory ? " mem" : ""), p.t));
       NODES[p.node].choices.filter(c => c.id !== p.pick).forEach(c => {
         const hidden = c.death && !st.dex.includes(c.death);
         ul.appendChild(el("li", "tl-other", hidden ? "??? (아직 안 가 본 길)" : c.t));
       });
+      // 그 사건의 마지막 갈림길 뒤에 실제 역사 한 줄(내 선택 / 실제 역사를 나란히)
+      const nx = rows[i + 1];
+      if (!nx || nx.event !== p.event) ul.appendChild(el("li", "tl-real", "📖 실제: " + EVENTS[p.event].real.lines[0]));
     });
     card.appendChild(ul);
     tl.appendChild(card);
   });
+  renderReview();
   $("endText").value = st.ending || "";
   $("endCount").textContent = countChars($("endText").value);
   $("submitBtn").disabled = st.submitted;
@@ -496,6 +575,28 @@ function renderEnding() {
   $("exploreBtn").hidden = !st.submitted;
   updateRealCount();
   renderPadlet();
+}
+/* 끝나고 틀린 것만 복기(벤치마크 2차): 어긋난 죽음·심판에서 틀린 사료와 그 까닭·쪽수. 카드가 보이는 순간 한 장씩 떠오름 */
+function renderReview() {
+  const items = Logic.reviewList(st, DEATHS, CARDS, NODES);
+  const box = $("reviewList"); box.innerHTML = "";
+  $("reviewNone").hidden = !!items.length;
+  items.forEach(it => {
+    const d = el("div", "review " + it.kind);
+    d.appendChild(el("b", "", (it.kind === "slip" ? "💀 " : "📜 심판에서 낸 사료: ") + it.title));
+    d.appendChild(el("p", "", it.why));
+    d.appendChild(el("span", "got-p", "교과서 " + it.p + "쪽"));
+    box.appendChild(d);
+  });
+  const cards = Array.from(box.children);
+  if (noMotion() || !("IntersectionObserver" in window)) { cards.forEach(c => c.classList.add("show")); return; }
+  const io = new IntersectionObserver(es => es.forEach(e => {
+    if (!e.isIntersecting) return;
+    const i = cards.indexOf(e.target);
+    setTimeout(() => e.target.classList.add("show"), (i % 6) * 50);
+    io.unobserve(e.target);
+  }), { threshold: 0.15 });
+  cards.forEach(c => io.observe(c));
 }
 function scrollTimeline(dir) { $("timeline").scrollBy({ left: dir * 240, behavior: noMotion() ? "auto" : "smooth" }); }
 /* 복사 글: 학생 본문 중심. 시대 이름 꼬리표만 최소로 붙인다 */
@@ -657,6 +758,8 @@ function init() {
   $("rescueBtn").addEventListener("click", doRescue);
   $("restartBtn").addEventListener("click", doRestart);
   $("realNext").addEventListener("click", leaveReal);
+  $("realOpen").addEventListener("click", openReal);
+  $("tbSound").addEventListener("click", () => { Sound.toggle(); renderSound(); });
   $("esHintBtn").addEventListener("click", () => { $("esHint").hidden = !$("esHint").hidden; });
   $("esText").addEventListener("input", essayInput);
   $("s5Next").addEventListener("click", leaveEssay);
