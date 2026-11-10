@@ -130,7 +130,8 @@ async function loadPadletUrl(grade, ban) {
 }
 function renderPadlet() {
   const a = $("padletBtn");
-  if (S.padletUrl) { a.href = S.padletUrl; a.hidden = false; $("padletMsg").textContent = ""; }
+  if (!st.submitted) { a.hidden = true; $("padletMsg").textContent = S.padletUrl ? "제출하면 패들렛 버튼이 열려." : ""; }
+  else if (S.padletUrl) { a.href = S.padletUrl; a.hidden = false; $("padletMsg").textContent = ""; }
   else { a.hidden = true; $("padletMsg").textContent = "패들렛 링크는 선생님이 알려 준 곳을 써 줘."; }
 }
 
@@ -571,7 +572,8 @@ function renderEnding() {
   $("endText").value = st.ending || "";
   $("endCount").textContent = countChars($("endText").value);
   $("submitBtn").disabled = st.submitted;
-  $("submitBtn").textContent = st.submitted ? "제출 완료" : "제출";
+  $("submitBtn").textContent = st.submitted ? "제출 완료" : "제출하고 복사하기";
+  $("copyBtn").hidden = !st.submitted;
   $("exploreBtn").hidden = !st.submitted;
   updateRealCount();
   renderPadlet();
@@ -618,6 +620,7 @@ async function submitAll() {
   S.sending = true; $("submitBtn").disabled = true; $("submitBtn").textContent = "보내는 중…";
   const sum = Logic.summary(st, ERAS, DEATHS);
   const out = buildOutText();
+  const copyP = Promise.race([copyText(out), new Promise(r => setTimeout(() => r(false), 3000))]); // 클릭 직후에 복사를 먼저 시작해야 브라우저가 허용한다
   const payload = {
     studentId: S.sid, studentName: S.name, gameName: CONFIG.GAME_NAME,
     choiceSummary: "갈림길 " + sum.crossed + "곳 / 등불 꺼짐 " + sum.lampsLost + "개 / 도감 " + sum.dex + "종 / 구출 " + sum.rescues + "번",
@@ -633,28 +636,38 @@ async function submitAll() {
   try { await postToSheet(payload); }
   catch (e) {
     $("s6Err").textContent = e.locked ? e.message : "저장이 안 됐어. 인터넷을 확인하고 다시 눌러 줘.";
-    S.sending = false; $("submitBtn").disabled = false; $("submitBtn").textContent = "제출";
+    S.sending = false; $("submitBtn").disabled = false; $("submitBtn").textContent = "제출하고 복사하기";
     return;
   }
+  const copied = await copyP;
   S.sending = false; S.outText = out; st.submitted = true;
   try { sessionStorage.setItem(storeKey() + ":out", out); } catch (e) { /* 막히면 메모리만 */ }
   st.essays = {}; st.ending = ""; // 제출한 글은 공용 태블릿에 남기지 않는다(복사는 이 화면에서만)
   save();
   $("s6Err").textContent = "";
   $("submitBtn").textContent = "제출 완료";
+  $("copyBtn").hidden = false;
   $("exploreBtn").hidden = false;
   $("realCount").textContent = "";
-  $("outMsg").textContent = S.preview ? "미리보기라 저장하지 않았어." : "제출했어! 글 복사를 눌러 패들렛에 올리면 끝.";
+  renderPadlet();
+  $("outMsg").textContent = S.preview ? "미리보기라 저장하지 않았어." : (copied ? "제출했고 글도 복사했어!" : "제출했어! 복사가 안 됐으니 «다시 복사»를 눌러 줘.");
+}
+async function copyText(text) {
+  try { await navigator.clipboard.writeText(text); return true; }
+  catch (e) {
+    const ta = el("textarea"); ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.select();
+    let ok = false;
+    try { ok = document.execCommand("copy"); } catch (e2) { ok = false; }
+    ta.remove();
+    return ok;
+  }
 }
 async function copyOut() {
   const text = S.outText || buildOutText();
   if (!text) { $("outMsg").textContent = st.submitted ? "제출한 글은 이 태블릿에 남겨 두지 않아. 다시 복사할 수 없어." : "복사할 글이 아직 없어."; return; }
-  try { await navigator.clipboard.writeText(text); }
-  catch (e) {
-    const ta = el("textarea"); ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
-    document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove();
-  }
-  $("outMsg").textContent = st.submitted ? "복사했어. 패들렛에 붙여넣기 해." : "복사했어. 제출 버튼도 꼭 눌러 줘!";
+  const ok = await copyText(text);
+  $("outMsg").textContent = !ok ? "복사가 안 됐어. 한 번 더 눌러 줘." : (st.submitted ? "복사했어. 필요한 곳에 붙여넣기 해." : "복사했어. 제출 버튼도 꼭 눌러 줘!");
 }
 
 /* ── 자유 탐험(제출 뒤, 미리보기): 임시 상태로 움직여 제출 기록은 그대로다. 도감만 공유한다 ── */
