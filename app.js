@@ -110,17 +110,47 @@ function pulseLamps() {
 }
 
 /* ── 시트 전송 ── */
+/* v183 (2026-11-17) 저장 재시도 — history26 snippets/submit_retry.js 원본을 복사(설명은 원본에).
+ * 오류 화면·HTTP 오류·네트워크 끊김·30초 초과면 1~3초 쉬고 최대 2번 더(기본 제출만, 같은 clientId로). 정상 JSON 오류는 다시 안 보냄. */
+async function postWithRetry(url, payload) {
+  const body = Object.assign({}, payload);
+  const canRetry = !body.action;
+  if (canRetry && !body.clientId) body.clientId = newClientId();
+  let lastErr = null;
+  for (let i = 0; i < (canRetry ? 3 : 1); i++) {
+    if (i) await new Promise(r => setTimeout(r, 1000 + submitRand() * 2000));
+    const ctl = typeof AbortController === "function" ? new AbortController() : null; // 30초 넘게 멈추면 끊고 다시
+    const timer = ctl ? setTimeout(() => ctl.abort(), 30000) : null;
+    try {
+      const res = await fetch(url, { method: "POST", body: JSON.stringify(body), signal: ctl ? ctl.signal : undefined });
+      const text = await res.text();
+      let json = null;
+      try { json = JSON.parse(text); } catch (e) { /* 구글 오류 화면(HTML) */ }
+      if (res.ok && json && typeof json === "object") return json;
+      lastErr = new Error("서버가 붐벼 저장하지 못했어. 잠시 뒤 다시 눌러 줘.");
+    } catch (e) {
+      lastErr = new Error("인터넷 연결이 불안정해 저장하지 못했어. 잠시 뒤 다시 눌러 줘.");
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
+  }
+  throw lastErr;
+}
+/* 제출 하나를 알아보는 무작위 값(영숫자·하이픈 8~64자 — 백엔드 submitClientId_ 규칙). */
+function newClientId() {
+  try { if (window.crypto && crypto.randomUUID) return crypto.randomUUID(); } catch (e) { /* 아래로 */ }
+  let s = "c" + Date.now().toString(36);
+  for (let i = 0; i < 3; i++) s += Math.floor(submitRand() * 4294967296).toString(36);
+  return s;
+}
+/* 0 이상 1 미만 무작위. Math.random을 안 쓰는 까닭: 일부 앱(survive-eras)의 검사기가 app.js 안 Math.random을 막는다(게임 판정은 학번으로만). */
+function submitRand() {
+  try { const a = new Uint32Array(1); crypto.getRandomValues(a); return a[0] / 4294967296; } catch (e) { return (Date.now() % 1000) / 1000; }
+}
+
 async function postToSheet(payload) {
   if (S.preview) return { result: "success", preview: true };
-  const ctl = new AbortController(); // 네트워크가 멈춰도 30초 뒤 «보내는 중»이 풀려 다시 누를 수 있게
-  const timer = setTimeout(() => ctl.abort(), 30000);
-  let json;
-  try {
-    const res = await fetch(CONFIG.SHEET_WEBAPP_URL, { method: "POST", body: JSON.stringify(payload), signal: ctl.signal });
-    json = await res.json();
-  } finally {
-    clearTimeout(timer);
-  }
+  const json = await postWithRetry(CONFIG.SHEET_WEBAPP_URL, payload);
   if (json.result !== "success") { const err = new Error(json.message || "저장 실패"); err.locked = !!json.locked; throw err; }
   return json;
 }
