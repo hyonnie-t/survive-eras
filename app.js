@@ -732,6 +732,38 @@ function startExploreRun(eid) {
 function exitExploreRun() { save(); stopLines(); G = st; exploreEvent = null; renderExplore(); }
 function stopLines() { finishTyping(); S.queue = []; S.playing = false; S.onDone = null; $("nextBtn").hidden = true; }
 
+/* ── v10 (2026-11-26) 처음부터 다시 하기: 아무렇게나 찍고 제출한 학생이 이 기기에서 다시 할 길이 없었다(효니 쪽지).
+ * 백엔드는 제출마다 새 행을 쓰고 최신 행을 기록으로 보므로, 끝까지 가서 다시 내면 앞 제출을 대신한다.
+ * 저장된 진행(학번별)을 지우고 이름 짓기부터. 확인은 앱 안 시트로(브라우저 confirm 창 쓰지 않음). 효과음 켬·끔은 기기 설정이라 그대로. ── */
+function askRedo() {
+  openSheet("🔄 처음부터 다시 할까?", b => {
+    b.appendChild(el("p", "", st.submitted
+      ? "앞에서 낸 기록은 선생님께 그대로 있어. 다시 끝까지 가서 제출하면 새 제출이 앞의 것을 대신해."
+      : "지금까지 건넌 길과 쓴 글이 모두 지워져."));
+    b.appendChild(el("p", "note", "주인공 이름부터 다시 짓고 첫 시대부터 시작해. 모은 사료·죽음 도감도 처음으로 돌아가."));
+    const row = el("div", "row");
+    const yes = el("button", "btn", "처음부터 다시 하기"); yes.type = "button"; yes.id = "redoYes";
+    yes.addEventListener("click", doRedo);
+    const no = el("button", "btn ghost", "그대로 둘래"); no.type = "button";
+    no.addEventListener("click", () => { $("sheet").hidden = true; });
+    row.appendChild(yes); row.appendChild(no);
+    b.appendChild(row);
+  });
+}
+function doRedo() {
+  if (S.sending) return; // 보내는 중에는 지우지 않는다
+  $("sheet").hidden = true;
+  stopLines(); exploreEvent = null;
+  try { localStorage.removeItem(storeKey()); sessionStorage.removeItem(storeKey() + ":out"); } catch (e) { /* 막히면 메모리만 */ }
+  st = Logic.newState(); G = st;
+  S.outText = "";
+  S.mode = new URLSearchParams(location.search).get("mode") === "3" ? 3 : 2; // 앞 판의 모드 말고 이번 주소의 모드로
+  ["s6Err", "outMsg", "realCount", "s1Err"].forEach(id => { if ($(id)) $(id).textContent = ""; });
+  $("endText").value = "";
+  $("charName").value = "";
+  show("s1");
+}
+
 /* ── 모은 사료·도감 ── */
 function openSheet(title, fill) {
   $("sheetTitle").textContent = title;
@@ -820,6 +852,7 @@ function init() {
   $("copyBtn").addEventListener("click", copyOut);
   $("endDex").addEventListener("click", openDex);
   $("exploreBtn").addEventListener("click", renderExplore);
+  $("redoBtn").addEventListener("click", askRedo);
   $("exploreBack").addEventListener("click", () => { G = st; exploreEvent = null; if (st.charName && (st.atEnding || st.submitted)) { renderEnding(); show("s6"); } else show("s0"); });
   $("exitExplore").addEventListener("click", e => { e.stopPropagation(); exitExploreRun(); });
   $("tbCards").addEventListener("click", openCards);
